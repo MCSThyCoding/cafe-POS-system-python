@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cafe POS - UI Design Specification</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #1f2937;
+            background: #f8fafc;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 60px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            font-size: 36px;
+            color: #c97b2e;
+            margin-bottom: 10px;
+        }
+
+        .meta {
+            color: #6b7280;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        h2 {
+            font-size: 28px;
+            color: #1f2937;
+            margin-top: 50px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        h3 {
+            font-size: 22px;
+            color: #7c3f12;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        h4 {
+            font-size: 18px;
+            color: #a8651f;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+        }
+
+        ul, ol {
+            margin-bottom: 20px;
+            padding-left: 25px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        code {
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            color: #c97b2e;
+        }
+
+        pre {
+            background: #1f2937;
+            color: #e5e7eb;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .color-swatch {
+            border-radius: 8px;
+            padding: 15px;
+            color: white;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .color-swatch.light {
+            color: #1f2937;
+            text-shadow: none;
+        }
+
+        .color-info {
+            font-size: 12px;
+            margin-top: 5px;
+            opacity: 0.9;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #6b7280;
+        }
+
+        tr:hover {
+            background: #f8fafc;
+        }
+
+        .toc {
+            background: #fff8e6;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 30px 0;
+            border-left: 4px solid #c97b2e;
+        }
+
+        .toc h3 {
+            margin-top: 0;
+            color: #7c3f12;
+        }
+
+        .toc ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .toc li {
+            margin-bottom: 8px;
+        }
+
+        .toc a {
+            color: #c97b2e;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .toc a:hover {
+            text-decoration: underline;
+        }
+
+        .highlight {
+            background: #fff4e5;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #f59e0b;
+            margin: 20px 0;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        hr {
+            border: none;
+            border-top: 2px solid #e5e7eb;
+            margin: 40px 0;
+        }
+
+        .component-card {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid #e5e7eb;
+        }
+
+        .component-card h4 {
+            margin-top: 0;
+            color: #c97b2e;
+        }
+
+        .screen-flow {
+            background: #1f2937;
+            color: #e5e7eb;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            margin: 0 5px 5px 0;
+        }
+
+        .badge-primary { background: #c97b2e; color: white; }
+        .badge-success { background: #16a34a; color: white; }
+        .badge-danger { background: #dc2626; color: white; }
+        .badge-info { background: #2563eb; color: white; }
+        .badge-warning { background: #f59e0b; color: white; }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 20px;
+            }
+            
+            h1 { font-size: 28px; }
+            h2 { font-size: 24px; }
+            h3 { font-size: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>☕ Cafe POS - UI Design Specification</h1>
+        <div class="meta">
+            <p><strong>Project:</strong> Coffee Shop Management System</p>
+            <p><strong>Version:</strong> 1.0</p>
+            <p><strong>Created:</strong> November 5, 2026</p>
+        </div>
+
+        <div class="toc">
+            <h3>📋 Table of Contents</h3>
+            <ul>
+                <li><a href="#design-system">1. Design System</a></li>
+                <li><a href="#component-library">2. Component Library</a></li>
+                <li><a href="#screen-specifications">3. Screen Specifications</a></li>
+                <li><a href="#user-flows">4. User Flows</a></li>
+                <li><a href="#interactive-states">5. Interactive States</a></li>
+                <li><a href="#responsive-design">6. Responsive Design</a></li>
+                <li><a href="#iconography">7. Iconography</a></li>
+                <li><a href="#accessibility">8. Accessibility</a></li>
+                <li><a href="#figma-implementation">9. Notes for Figma Implementation</a></li>
+            </ul>
+        </div>
+
+        <hr>
+
+        <div id="design-system" class="section">
+            <h2>🎨 Design System</h2>
+            
+            <h3>Color Palette</h3>
+            
+            <h4>Primary Colors</h4>
+            <div class="color-palette">
+                <div class="color-swatch" style="background: #c97b2e;">
+                    Brand
+                    <div class="color-info">#c97b2e (Coffee Gold)</div>
+                </div>
+                <div class="color-swatch" style="background: #a8651f;">
+                    Brand Dark
+                    <div class="color-info">#a8651f (Darker Coffee)</div>
+                </div>
+                <div class="color-swatch" style="background: #7c3f12;">
+                    Brand Text
+                    <div class="color-info">#7c3f12 (Coffee Brown)</div>
+                </div>
+            </div>
+
+            <h4>Background Colors</h4>
+            <div class="color-palette">
+                <div class="color-swatch light" style="background: #fff8e6;">
+                    Cream
+                    <div class="color-info">#fff8e6 (Light Cream)</div>
+                </div>
+                <div class="color-swatch light" style="background: #fdf0cf;">
+                    Sand
+                    <div class="color-info">#fdf0cf (Warm Sand)</div>
+                </div>
+                <div class="color-swatch light" style="background: #f8fafc;">
+                    Background
+                    <div class="color-info">#f8fafc (Light Gray)</div>
+                </div>
+                <div class="color-swatch light" style="background: #ffffff; border: 1px solid #e5e7eb;">
+                    Card
+                    <div class="color-info">#ffffff (White)</div>
+                </div>
+            </div>
+
+            <h4>Text Colors</h4>
+            <div class="color-palette">
+                <div class="color-swatch" style="background: #1f2937;">
+                    Ink
+                    <div class="color-info">#1f2937 (Primary Text)</div>
+                </div>
+                <div class="color-swatch" style="background: #6b7280;">
+                    Muted
+                    <div class="color-info">#6b7280 (Secondary Text)</div>
+                </div>
+                <div class="color-swatch light" style="background: #e5e7eb;">
+                    Line
+                    <div class="color-info">#e5e7eb (Borders)</div>
+                </div>
+            </div>
+
+            <h4>Status Colors</h4>
+            <div class="color-palette">
+                <div class="color-swatch" style="background: #16a34a;">
+                    Green
+                    <div class="color-info">#16a34a (Success)</div>
+                </div>
+                <div class="color-swatch" style="background: #dc2626;">
+                    Red
+                    <div class="color-info">#dc2626 (Error)</div>
+                </div>
+                <div class="color-swatch" style="background: #2563eb;">
+                    Blue
+                    <div class="color-info">#2563eb (Info)</div>
+                </div>
+                <div class="color-swatch" style="background: #9333ea;">
+                    Purple
+                    <div class="color-info">#9333ea (Accent)</div>
+                </div>
+            </div>
+
+            <h4>Additional Colors</h4>
+            <div class="color-palette">
+                <div class="color-swatch" style="background: #22c55e;">
+                    Success Light
+                    <div class="color-info">#22c55e</div>
+                </div>
+                <div class="color-swatch" style="background: #f59e0b;">
+                    Warning
+                    <div class="color-info">#f59e0b</div>
+                </div>
+                <div class="color-swatch light" style="background: #fffbe8;">
+                    Demo Box Background
+                    <div class="color-info">#fffbe8</div>
+                </div>
+                <div class="color-swatch light" style="background: #fcefbf;">
+                    Demo Box Border
+                    <div class="color-info">#fcefbf</div>
+                </div>
+                <div class="color-swatch" style="background: #8a4b12;">
+                    Demo Box Text
+                    <div class="color-info">#8a4b12</div>
+                </div>
+            </div>
+
+            <h3>Typography</h3>
+            
+            <h4>Font Family</h4>
+            <ul>
+                <li><strong>Primary:</strong> Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif</li>
+                <li><strong>Monospace:</strong> ui-monospace, Menlo, monospace</li>
+            </ul>
+
+            <h4>Font Sizes</h4>
+            <table>
+                <tr>
+                    <th>Element</th>
+                    <th>Size</th>
+                    <th>Weight</th>
+                </tr>
+                <tr>
+                    <td>Logo</td>
+                    <td>28px</td>
+                    <td>Normal</td>
+                </tr>
+                <tr>
+                    <td>Page Title (H1)</td>
+                    <td>26px</td>
+                    <td>Bold</td>
+                </tr>
+                <tr>
+                    <td>Section Title (H2)</td>
+                    <td>26px</td>
+                    <td>Bold</td>
+                </tr>
+                <tr>
+                    <td>Card Title (H3)</td>
+                    <td>17px</td>
+                    <td>Semibold</td>
+                </tr>
+                <tr>
+                    <td>Modal Title (H3)</td>
+                    <td>22px</td>
+                    <td>Semibold</td>
+                </tr>
+                <tr>
+                    <td>Label</td>
+                    <td>14px</td>
+                    <td>Medium</td>
+                </tr>
+                <tr>
+                    <td>Body Text</td>
+                    <td>14px</td>
+                    <td>Normal</td>
+                </tr>
+                <tr>
+                    <td>Stat Value</td>
+                    <td>24px</td>
+                    <td>Bold</td>
+                </tr>
+                <tr>
+                    <td>Button</td>
+                    <td>14px</td>
+                    <td>Semibold</td>
+                </tr>
+            </table>
+
+            <h4>Font Weights</h4>
+            <ul>
+                <li><strong>Normal:</strong> 400</li>
+                <li><strong>Medium:</strong> 500</li>
+                <li><strong>Semibold:</strong> 600</li>
+                <li><strong>Bold:</strong> 700</li>
+            </ul>
+
+            <h3>Spacing System</h3>
+            
+            <h4>Key Padding Values</h4>
+            <table>
+                <tr>
+                    <th>Component</th>
+                    <th>Padding</th>
+                </tr>
+                <tr>
+                    <td>Card</td>
+                    <td>20px</td>
+                </tr>
+                <tr>
+                    <td>Login Card</td>
+                    <td>32px</td>
+                </tr>
+                <tr>
+                    <td>Modal Box</td>
+                    <td>32px</td>
+                </tr>
+                <tr>
+                    <td>Button</td>
+                    <td>10px 16px</td>
+                </tr>
+                <tr>
+                    <td>Input</td>
+                    <td>11px 12px</td>
+                </tr>
+                <tr>
+                    <td>Page</td>
+                    <td>24px 24px 48px</td>
+                </tr>
+            </table>
+
+            <h4>Key Margin Values</h4>
+            <table>
+                <tr>
+                    <th>Element</th>
+                    <th>Margin</th>
+                </tr>
+                <tr>
+                    <td>Grid Gap</td>
+                    <td>16px</td>
+                </tr>
+                <tr>
+                    <td>Chip Gap</td>
+                    <td>8px</td>
+                </tr>
+                <tr>
+                    <td>Product Grid Gap</td>
+                    <td>14px</td>
+                </tr>
+                <tr>
+                    <td>Page Head Margin Bottom</td>
+                    <td>20px</td>
+                </tr>
+                <tr>
+                    <td>Card Title Margin Bottom</td>
+                    <td>14px</td>
+                </tr>
+            </table>
+
+            <h3>Border Radius</h3>
+            <table>
+                <tr>
+                    <th>Component</th>
+                    <th>Border Radius</th>
+                </tr>
+                <tr>
+                    <td>Login Card</td>
+                    <td>16px</td>
+                </tr>
+                <tr>
+                    <td>Button</td>
+                    <td>8px</td>
+                </tr>
+                <tr>
+                    <td>Card</td>
+                    <td>12px</td>
+                </tr>
+                <tr>
+                    <td>Tag/Pill</td>
+                    <td>999px (fully rounded)</td>
+                </tr>
+                <tr>
+                    <td>Qty Button</td>
+                    <td>50% (circular)</td>
+                </tr>
+            </table>
+
+            <h3>Shadows</h3>
+            <ul>
+                <li><strong>Login Card:</strong> <code>0 20px 40px rgba(0,0,0,0.08)</code></li>
+                <li><strong>Product Card Hover:</strong> <code>0 6px 16px rgba(0,0,0,0.08)</code></li>
+                <li><strong>Card:</strong> <code>0 1px 2px rgba(0,0,0,0.03)</code></li>
+            </ul>
+
+            <h3>Transitions</h3>
+            <ul>
+                <li><strong>Product Card:</strong> Transform 0.08s, Box-shadow 0.15s</li>
+            </ul>
+        </div>
+
+        <hr>
+
+        <div id="component-library" class="section">
+            <h2>🧩 Component Library</h2>
+
+            <div class="component-card">
+                <h4>Buttons</h4>
+                <p><span class="badge badge-primary">Primary</span> Background: #c97b2e, Text: White, Border Radius: 8px, Padding: 10px 16px, Font Weight: 600</p>
+                <p><span class="badge badge-primary">Block</span> Width: 100%</p>
+                <p><span class="badge badge-primary">Small</span> Padding: 6px 12px, Font Size: 13px</p>
+                <p><span class="badge badge-danger">Link</span> Background: None, Color: Red #dc2626</p>
+                <p><span class="badge badge-success">Payment</span> Default: #f1f5f9, Active: Green #16a34a, Grid: 2 columns</p>
+                <p><span class="badge badge-info">Chip/Category</span> Default: #f1f5f9, Active: Brand #c97b2e</p>
+                <p><span class="badge badge-warning">Quantity</span> Background: Sand #fdf0cf, Circular (50%), 28x28px</p>
+            </div>
+
+            <div class="component-card">
+                <h4>Input Fields</h4>
+                <p><span class="badge badge-primary">Standard</span> Width: 100%, Padding: 11px 12px, Border: 1px solid #e5e7eb, Border Radius: 8px</p>
+                <p><span class="badge badge-info">Search</span> Padding: 12px 14px, Border Radius: 10px, Placeholder: 🔍 Search products...</p>
+                <p><span class="badge badge-warning">Date/Month/Year</span> Padding: 8px 10px, Border Radius: 8px</p>
+                <p><span class="badge badge-success">Select</span> Padding: 8px 10px, Background: White, Cursor: Pointer</p>
+            </div>
+
+            <div class="component-card">
+                <h4>Cards</h4>
+                <p><span class="badge badge-primary">Standard</span> Background: White, Border: 1px solid #e5e7eb, Border Radius: 12px, Padding: 20px</p>
+                <p><span class="badge badge-info">Stat</span> Layout: Flex, space-between, Value: 24px bold, Icon: 38x38px</p>
+                <p><span class="badge badge-warning">Login</span> Max-width: 420px, Border Radius: 16px, Padding: 32px, Shadow: Large</p>
+                <p><span class="badge badge-success">Table</span> Padding: 0, Overflow: Auto</p>
+            </div>
+
+            <div class="component-card">
+                <h4>Navigation</h4>
+                <p><span class="badge badge-primary">Sidebar</span> Width: 240px, Height: 100vh (sticky), Background: Cream #fff8e6</p>
+                <p><span class="badge badge-info">Brand</span> Font Size: 20px, Bold, Color: #7c3f12, Icon: ☕</p>
+                <p><span class="badge badge-warning">Nav Item</span> Padding: 10px 12px, Border Radius: 10px, Icon + Text</p>
+                <p><span class="badge badge-success">User Info</span> Border-top, Font Size: 12px, Role Badge: 11px</p>
+            </div>
+
+            <div class="component-card">
+                <h4>Product Card</h4>
+                <p>Grid: Auto-fill, min 170px, gap 14px</p>
+                <p>Emoji: 34px | Name: 14px medium | Price: Brand bold | Stock: 11px muted</p>
+                <p>States: Hover (translate Y -2px), Disabled (opacity 0.5)</p>
+            </div>
+
+            <div class="component-card">
+                <h4>Cart</h4>
+                <p><span class="badge badge-primary">Cart Card</span> Position: Sticky, Padding: 20px</p>
+                <p><span class="badge badge-info">Cart Pill</span> Background: Sand #fdf0cf, Font Weight: 600</p>
+                <p><span class="badge badge-warning">Cart Line</span> Background: #f8fafc, Border Radius: 10px</p>
+                <p><span class="badge badge-success">Total Row</span> Border-top, Font Size: 18px, Amount: 22px bold</p>
+            </div>
+
+            <div class="component-card">
+                <h4>Tables</h4>
+                <p>Width: 100%, Border Collapse: Collapse, Font Size: 14px</p>
+                <p>Header: Background #fafbfc, Color: Muted, Font Size: 13px</p>
+                <p>Cell: Padding 12px 16px, Border-top: #f1f5f9</p>
+                <p>Price Cell: Color: Green #16a34a, Font Weight: 600</p>
+            </div>
+
+            <div class="component-card">
+                <h4>Alerts & Modals</h4>
+                <p><span class="badge badge-warning">Alert Box</span> Background: #fff4e5, Border: #fcd9a8, Color: #8a4b12, Icon: ⚠</p>
+                <p><span class="badge badge-danger">Error Message</span> Color: Red #dc2626, Font Size: 13px</p>
+                <p><span class="badge badge-info">Modal Overlay</span> Background: rgba(15,23,42,0.5), Z-Index: 20</p>
+                <p><span class="badge badge-success">Modal Box</span> Border Radius: 16px, Padding: 32px, Max-width: 380px</p>
+            </div>
+
+            <div class="component-card">
+                <h4>Toast Notification</h4>
+                <p>Position: Fixed, bottom 24px, left 50%, transform X -50%</p>
+                <p>Background: #111827, Color: White, Border Radius: 10px, Z-Index: 30</p>
+                <p>Error State: Background: Red #dc2626</p>
+            </div>
+        </div>
+
+        <hr>
+
+        <div id="screen-specifications" class="section">
+            <h2>📱 Screen Specifications</h2>
+
+            <div class="component-card">
+                <h4>1. Login Screen</h4>
+                <p><strong>Layout:</strong> Background: Linear gradient (135deg, #fffaf0, #fdebd0), Centered card (max 420px)</p>
+                <p><strong>Elements:</strong></p>
+                <ol>
+                    <li>Logo Badge: 56x56px, Brand background, emoji ☕</li>
+                    <li>Title: "Cafe POS", 26px, centered</li>
+                    <li>Subtitle: "Coffee Shop Management System", 14px muted</li>
+                    <li>Username Input: Full width, placeholder "Enter your username"</li>
+                    <li>Password Input: Full width, type password</li>
+                    <li>Login Button: Primary, block, "Login →"</li>
+                    <li>Demo Box: Credentials for Admin and Cashier</li>
+                </ol>
+            </div>
+
+            <div class="component-card">
+                <h4>2. Main App Shell</h4>
+                <p><strong>Layout:</strong> Flex, min-height 100vh, Sidebar (240px) + Page Content (flex-1)</p>
+                <p><strong>Sidebar Elements:</strong></p>
+                <ol>
+                    <li>Brand: "☕ Cafe POS", 20px bold</li>
+                    <li>Navigation: Point of Sale (☕), Dashboard (▦), Inventory (📦), Reports (📊)</li>
+                    <li>User Info: Name, Role badge, Logout button</li>
+                </ol>
+            </div>
+
+            <div class="component-card">
+                <h4>3. Point of Sale Screen</h4>
+                <p><strong>Layout:</strong> Grid 2 columns, gap 20px</p>
+                <p><strong>Left Column:</strong> Page Header + Category Chips + Product Grid</p>
+                <p><strong>Right Column (Cart):</strong> Cart Items + Total Row + Payment Buttons + Complete Button</p>
+                <p><strong>Categories:</strong> All, Coffee, Cold Drinks, Food, Tea</p>
+            </div>
+
+            <div class="component-card">
+                <h4>4. Dashboard Screen</h4>
+                <p><strong>Layout:</strong> Alert (if low stock) + Stats Grid (4 columns) + Charts Grid (2 columns) + Recent Orders Table</p>
+                <p><strong>Stats:</strong> Today's Revenue, Today's Orders, Average Order, Total Products</p>
+                <p><strong>Charts:</strong> Sales by Category (Pie), Top Selling Products (Bar)</p>
+            </div>
+
+            <div class="component-card">
+                <h4>5. Inventory Screen</h4>
+                <p><strong>Layout:</strong> Page Header + Search Bar + Table</p>
+                <p><strong>Table Columns:</strong> Product, Category, Stock Level, Quantity, Price, Actions (Admin only)</p>
+                <p><strong>Stock Status:</strong> Dot (good/low/out) + label</p>
+            </div>
+
+            <div class="component-card">
+                <h4>6. Reports Screen (Admin Only)</h4>
+                <p><strong>Layout:</strong> Page Header + Date Bar + Stats Grid + Charts Grid + Profit Analysis Table + Category Reports Table</p>
+                <p><strong>Date Bar:</strong> Period dropdown (Daily/Monthly/Yearly) + Date/Month/Year picker</p>
+                <p><strong>Stats:</strong> Total Revenue, Total Cost, Profit, Total Orders</p>
+                <p><strong>Charts:</strong> Revenue Trend (Line), Profit by Product (Bar)</p>
+            </div>
+        </div>
+
+        <hr>
+
+        <div id="user-flows" class="section">
+            <h2>🔄 User Flows</h2>
+
+            <div class="component-card">
+                <h4>1. Login Flow</h4>
+                <div class="screen-flow">
+1. User opens app
+2. Sees login screen
+3. Enters username and password
+4. Clicks "Login →"
+5. System validates credentials
+6. If valid → Redirect to Dashboard/POS
+7. If invalid → Show error message
+                </div>
+            </div>
+
+            <div class="component-card">
+                <h4>2. POS Flow</h4>
+                <div class="screen-flow">
+1. User navigates to Point of Sale
+2. Selects category filter (optional)
+3. Clicks product to add to cart
+4. Adjusts quantity (+/- buttons)
+5. Selects payment method (Cash/Card)
+6. Clicks "Complete Order"
+7. Modal appears with order confirmation
+8. Click "New Order" to reset
+                </div>
+            </div>
+
+            <div class="component-card">
+                <h4>3. Dashboard Flow</h4>
+                <div class="screen-flow">
+1. User navigates to Dashboard
+2. Views today's stats (revenue, orders, etc.)
+3. Views sales by category chart
+4. Views top products chart
+5. Views recent orders table
+6. Checks low stock alert (if any)
+                </div>
+            </div>
+
+            <div class="component-card">
+                <h4>4. Inventory Flow (Admin)</h4>
+                <div class="screen-flow">
+1. Admin navigates to Inventory
+2. Views all products with stock levels
+3. Searches for specific product (optional)
+4. Clicks "+ Add 10" to restock
+5. Stock updates immediately
+                </div>
+            </div>
+
+            <div class="component-card">
+                <h4>5. Reports Flow (Admin)</h4>
+                <div class="screen-flow">
+1. Admin navigates to Reports
+2. Selects period type (Daily/Monthly/Yearly)
+3. Selects date/month/year
+4. Views stats and charts
+5. Views profit analysis table
+6. Views category reports
+7. Clicks "Export Report" to download
+                </div>
+            </div>
+
+            <div class="component-card">
+                <h4>6. Logout Flow</h4>
+                <div class="screen-flow">
+1. User clicks "Logout" in sidebar
+2. System clears session
+3. Redirects to login screen
+                </div>
+            </div>
+        </div>
+
+        <hr>
+
+        <div id="interactive-states" class="section">
+            <h2>⚡ Interactive States</h2>
+
+            <div class="component-card">
+                <h4>Button States</h4>
+                <ul>
+                    <li><strong>Default:</strong> Normal appearance</li>
+                    <li><strong>Hover:</strong> Background darkens (brand-dark)</li>
+                    <li><strong>Active:</strong> Click feedback</li>
+                    <li><strong>Disabled:</strong> Opacity 0.5, cursor not-allowed</li>
+                    <li><strong>Loading:</strong> Spinner or loading text</li>
+                </ul>
+            </div>
+
+            <div class="component-card">
+                <h4>Input States</h4>
+                <ul>
+                    <li><strong>Default:</strong> Border Line color</li>
+                    <li><strong>Focus:</strong> 2px solid Brand outline, border transparent</li>
+                    <li><strong>Error:</strong> Red border (optional)</li>
+                    <li><strong>Disabled:</strong> Gray background</li>
+                </ul>
+            </div>
+
+            <div class="component-card">
+                <h4>Card States</h4>
+                <ul>
+                    <li><strong>Default:</strong> Normal shadow</li>
+                    <li><strong>Hover:</strong> Enhanced shadow (product cards)</li>
+                    <li><strong>Disabled:</strong> Opacity 0.5 (out of stock)</li>
+                </ul>
+            </div>
+
+            <div class="component-card">
+                <h4>Navigation States</h4>
+                <ul>
+                    <li><strong>Default:</strong> Transparent border</li>
+                    <li><strong>Hover:</strong> Sand background</li>
+                    <li><strong>Active:</strong> Sand background + visual indicator</li>
+                </ul>
+            </div>
+
+            <div class="component-card">
+                <h4>Payment Button States</h4>
+                <ul>
+                    <li><strong>Default:</strong> Light gray background</li>
+                    <li><strong>Selected:</strong> Green background, white text</li>
+                </ul>
+            </div>
+        </div>
+
+        <hr>
+
+        <div id="responsive-design" class="section">
+            <h2>📐 Responsive Design</h2>
+
+            <div class="component-card">
+                <h4>Desktop (> 1000px)</h4>
+                <ul>
+                    <li>Stats Grid: 4 columns</li>
+                    <li>Charts Grid: 2 columns</li>
+                    <li>POS: 2 columns (products + cart)</li>
+                    <li>Sidebar: Fixed, 240px</li>
+                </ul>
+            </div>
+
+            <div class="component-card">
+                <h4>Tablet (700px - 1000px)</h4>
+                <ul>
+                    <li>Stats Grid: 2 columns</li>
+                    <li>Charts Grid: 1 column</li>
+                    <li>POS: 1 column (cart below products)</li>
+                    <li>Sidebar: Fixed, 240px</li>
+                </ul>
+            </div>
+
+            <div class="component-card">
+                <h4>Mobile (< 700px)</h4>
+                <ul>
+                    <li>App Layout: Column (sidebar on top)</li>
+                    <li>Sidebar: Full width, height auto, padding 12px</li>
+                    <li>Navigation: Row, wrap</li>
+                    <li>Brand: Margin-bottom 10px</li>
+                    <li>User Info: Name/role hidden</li>
+                    <li>Page Padding: 16px</li>
+                    <li>Stats Grid: 2 columns or 1 column</li>
+                </ul>
+            </div>
+        </div>
+
+        <hr>
+
+        <div id="iconography" class="section">
+            <h2>🎯 Iconography</h2>
+
+            <h3>Navigation Emojis</h3>
+            <table>
+                <tr>
+                    <th>Element</th>
+                    <th>Emoji</th>
+                </tr>
+                <tr>
+                    <td>Logo</td>
+                    <td>☕</td>
+                </tr>
+                <tr>
+                    <td>Point of Sale</td>
+                    <td>☕</td>
+                </tr>
+                <tr>
+                    <td>Dashboard</td>
+                    <td>▦</td>
+                </tr>
+                <tr>
+                    <td>Inventory</td>
+                    <td>📦</td>
+                </tr>
+                <tr>
+                    <td>Reports</td>
+                    <td>📊</td>
+                </tr>
+                <tr>
+                    <td>Cart</td>
+                    <td>🛒</td>
+                </tr>
+                <tr>
+                    <td>Logout</td>
+                    <td>⎋</td>
+                </tr>
+                <tr>
+                    <td>Search</td>
+                    <td>🔍</td>
+                </tr>
+                <tr>
+                    <td>Alert</td>
+                    <td>⚠</td>
+                </tr>
+                <tr>
+                    <td>Delete</td>
+                    <td>🗑</td>
+                </tr>
+                <tr>
+                    <td>Success</td>
+                    <td>✔</td>
+                </tr>
+            </table>
+
+            <h3>Product Category Emojis</h3>
+            <table>
+                <tr>
+                    <th>Category</th>
+                    <th>Emoji</th>
+                </tr>
+                <tr>
+                    <td>Coffee</td>
+                    <td>☕</td>
+                </tr>
+                <tr>
+                    <td>Milk</td>
+                    <td>🥛</td>
+                </tr>
+                <tr>
+                    <td>Chocolate</td>
+                    <td>🍫</td>
+                </tr>
+                <tr>
+                    <td>Ice</td>
+                    <td>🧊</td>
+                </tr>
+                <tr>
+                    <td>Drink</td>
+                    <td>🥤</td>
+                </tr>
+                <tr>
+                    <td>Lemon</td>
+                    <td>🍋</td>
+                </tr>
+                <tr>
+                    <td>Croissant</td>
+                    <td>🥐</td>
+                </tr>
+                <tr>
+                    <td>Muffin</td>
+                    <td>🧁</td>
+                </tr>
+                <tr>
+                    <td>Sandwich</td>
+                    <td>🥪</td>
+                </tr>
+                <tr>
+                    <td>Cookie</td>
+                    <td>🍪</td>
+                </tr>
+                <tr>
+                    <td>Tea</td>
+                    <td>🍵</td>
+                </tr>
+                <tr>
+                    <td>Teapot</td>
+                    <td>🫖</td>
+                </tr>
+                <tr>
+                    <td>Leaf</td>
+                    <td>🍃</td>
+                </tr>
+                <tr>
+                    <td>Bubble Tea</td>
+                    <td>🧋</td>
+                </tr>
+            </table>
+        </div>
+
+        <hr>
+
+        <div id="accessibility" class="section">
+            <h2>♿ Accessibility</h2>
+
+            <div class="component-card">
+                <h4>Color Contrast</h4>
+                <ul>
+                    <li>Ensure text meets WCAG AA standards</li>
+                    <li>Muted text should still be readable</li>
+                    <li>Error messages should be high contrast</li>
+                </ul>
+            </div>
+
+            <div class="component-card">
+                <h4>Focus States</h4>
+                <ul>
+                    <li>All interactive elements should have visible focus states</li>
+                    <li>Use 2px outline for keyboard navigation</li>
+                </ul>
+            </div>
+
+            <div class="component-card">
+                <h4>ARIA Labels</h4>
+                <ul>
+                    <li>Buttons should have descriptive labels</li>
+                    <li>Form inputs should have associated labels</li>
+                    <li>Modal should have aria-modal attribute</li>
+                </ul>
+            </div>
+
+            <div class="component-card">
+                <h4>Keyboard Navigation</h4>
+                <ul>
+                    <li>Tab order should be logical</li>
+                    <li>Enter/Space to activate buttons</li>
+                    <li>Escape to close modals</li>
+                </ul>
+            </div>
+        </div>
+
+        <hr>
+
+        <div id="figma-implementation" class="section">
+            <h2>🎨 Notes for Figma Implementation</h2>
+
+            <div class="highlight">
+                <h4>1. Create Components First</h4>
+                <ul>
+                    <li>Build the design system (colors, typography, spacing)</li>
+                    <li>Create reusable components (buttons, cards, inputs)</li>
+                    <li>Use auto-layout for responsive components</li>
+                </ul>
+            </div>
+
+            <div class="highlight">
+                <h4>2. Use Variables</h4>
+                <ul>
+                    <li>Color variables for easy theming</li>
+                    <li>Spacing variables for consistency</li>
+                    <li>Typography scale</li>
+                </ul>
+            </div>
+
+            <div class="highlight">
+                <h4>3. Create Screens</h4>
+                <ul>
+                    <li>Start with login screen</li>
+                    <li>Build app shell (sidebar + content)</li>
+                    <li>Create each page as a separate frame</li>
+                    <li>Use components for consistency</li>
+                </ul>
+            </div>
+
+            <div class="highlight">
+                <h4>4. Interactive Elements</h4>
+                <ul>
+                    <li>Create hover states for all buttons</li>
+                    <li>Create focus states for inputs</li>
+                    <li>Create disabled states</li>
+                    <li>Create loading states</li>
+                </ul>
+            </div>
+
+            <div class="highlight">
+                <h4>5. Responsive Design</h4>
+                <ul>
+                    <li>Use constraints for responsive layouts</li>
+                    <li>Create variants for different screen sizes</li>
+                    <li>Test on mobile, tablet, desktop</li>
+                </ul>
+            </div>
+
+            <div class="highlight">
+                <h4>6. Export Assets</h4>
+                <ul>
+                    <li>Export icons as SVG</li>
+                    <li>Export charts as PNG/SVG</li>
+                    <li>Ensure correct scale for retina displays</li>
+                </ul>
+            </div>
+
+            <h3>Additional Resources</h3>
+            <div class="component-card">
+                <h4>Files Reference</h4>
+                <ul>
+                    <li><strong>Styles:</strong> <code>/static/style.css</code></li>
+                    <li><strong>HTML Structure:</strong> <code>/static/index.html</code></li>
+                    <li><strong>JavaScript Logic:</strong> <code>/static/app.js</code></li>
+                    <li><strong>Backend API:</strong> <code>/app.py</code></li>
+                </ul>
+            </div>
+
+            <div class="component-card">
+                <h4>Key Features</h4>
+                <ul>
+                    <li>JWT Authentication</li>
+                    <li>Role-based access (Admin, Cashier)</li>
+                    <li>Real-time inventory tracking</li>
+                    <li>Chart.js for data visualization</li>
+                    <li>Responsive design</li>
+                    <li>Export functionality</li>
+                </ul>
+            </div>
+        </div>
+
+        <hr>
+
+        <div class="highlight" style="text-align: center; margin-top: 50px;">
+            <h3 style="color: #c97b2e; margin-top: 0;">☕ End of UI Design Specification</h3>
+            <p style="margin-bottom: 0;">Use this document as a blueprint to recreate the Cafe POS UI in Figma</p>
+        </div>
+    </div>
+</body>
+</html>

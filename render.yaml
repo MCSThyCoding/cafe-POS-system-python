@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: cafe-pos
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: CAFE_POS_SECRET
+        generateValue: true
+databases:
+  - name: cafe-pos-db
+    databaseName: cafe_pos
+    user: cafe_pos_user

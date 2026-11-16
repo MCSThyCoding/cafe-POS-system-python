@@ -87,7 +87,7 @@ SEED_PRODUCTS = [
     ("Black Tea", "Tea", 2.50, 0.50, 50, "🍵"),
     ("Chai Latte", "Tea", 4.00, 1.20, 50, "🫖"),
     ("Green Tea", "Tea", 2.50, 0.55, 50, "🍃"),
-    ("Milk Tea", "Tea", 3.50, 1.00, 0, "🧋"),
+    ("Milk Tea", "Tea", 3.50, 1.00, 50, "🧋"),
 ]
 
 

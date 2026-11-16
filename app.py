@@ -15,6 +15,24 @@ from flask import Flask, Response, g, jsonify, request, send_from_directory
 from flask_cors import CORS
 from werkzeug.security import check_password_hash, generate_password_hash
 
+# Import configuration
+try:
+    from config import SECRET_KEY, TOKEN_HOURS, LOW_STOCK, RESTOCK_STEP, DB_PATH
+except ImportError:
+    # Fallback if config.py doesn't exist
+    logger = logging.getLogger(__name__)
+    logger.warning("config.py not found, using defaults")
+    SECRET_KEY = os.environ.get("CAFE_POS_SECRET", "change-me-in-production-cafe-pos-secret-key")
+    TOKEN_HOURS = 8
+    LOW_STOCK = 10
+    RESTOCK_STEP = 10
+    DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cafe_pos.db")
+
+# Validation limits
+MAX_ORDER_QUANTITY = 100
+MAX_RESTOCK_QUANTITY = 1000
+MAX_CUSTOMER_NAME_LENGTH = 60
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -26,21 +44,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "cafe_pos.db")
-
 # Validate SECRET_KEY in production
-SECRET_KEY = os.environ.get("CAFE_POS_SECRET")
-if not SECRET_KEY:
+if not SECRET_KEY or SECRET_KEY == "change-me-in-production-cafe-pos-secret-key":
     if os.environ.get("FLASK_ENV") == "production":
         logger.error("CAFE_POS_SECRET environment variable must be set in production")
         raise ValueError("CAFE_POS_SECRET environment variable must be set in production")
-    SECRET_KEY = "change-me-in-production-cafe-pos-secret-key"
     logger.warning("Using default SECRET_KEY - set CAFE_POS_SECRET environment variable in production")
-
-TOKEN_HOURS = 8
-LOW_STOCK = 10
-RESTOCK_STEP = 10
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 CORS(app)

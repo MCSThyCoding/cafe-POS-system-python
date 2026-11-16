@@ -45,14 +45,17 @@ MAX_ORDER_QUANTITY = 100
 MAX_RESTOCK_QUANTITY = 1000
 MAX_CUSTOMER_NAME_LENGTH = 60
 
-# Configure logging
+# Configure logging (serverless filesystems like Vercel are read-only, so the
+# log file is best-effort and we always keep the stream handler)
+_log_handlers = [logging.StreamHandler()]
+try:
+    _log_handlers.insert(0, logging.FileHandler(os.path.join(BASE_DIR, 'cafe_pos.log')))
+except OSError:
+    pass
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s',
-    handlers=[
-        logging.FileHandler('cafe_pos.log'),
-        logging.StreamHandler()
-    ]
+    handlers=_log_handlers
 )
 logger = logging.getLogger(__name__)
 

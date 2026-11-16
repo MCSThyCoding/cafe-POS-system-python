@@ -1,10 +1,14 @@
 """Initialize PostgreSQL database for Cafe POS on Vercel"""
+import os
+
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from werkzeug.security import generate_password_hash
 
-# Replace this with your DATABASE_URL from Neon or Supabase
-DATABASE_URL = "postgresql://neondb_owner:npg_mTpLH9bfYnA2@ep-old-cloud-bdmtfjv2-pooler.c-8.us-east-2.aws.neon.tech/coffee-POS-python?sslmode=require&channel_binding=require"
+import config  # noqa: F401 - loads .env into os.environ
+
+# Set DATABASE_URL in .env or the environment; this is the Neon fallback
+DATABASE_URL = os.environ.get("DATABASE_URL") or "postgresql://neondb_owner:npg_mTpLH9bfYnA2@ep-old-cloud-bdmtfjv2-pooler.c-8.us-east-2.aws.neon.tech/coffee-POS-python?sslmode=require&channel_binding=require"
 
 def init_db():
     conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)

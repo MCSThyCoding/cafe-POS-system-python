@@ -1,6 +1,24 @@
 """Configuration constants for Cafe POS"""
 import os
 
+
+def load_env_file(path=None):
+    """Load KEY=VALUE pairs from a .env file into os.environ (does not override)."""
+    env_path = path or os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+    try:
+        with open(env_path) as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, value = line.split("=", 1)
+                os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+    except OSError:
+        pass
+
+
+load_env_file()
+
 # Security
 SECRET_KEY = os.environ.get("CAFE_POS_SECRET")
 if not SECRET_KEY:

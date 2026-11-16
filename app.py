@@ -6,6 +6,7 @@ Roles:
 """
 import os
 import logging
+import re
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 
@@ -29,13 +30,15 @@ USE_POSTGRES = bool(DATABASE_URL)
 
 if USE_POSTGRES:
     import psycopg2
-    from psycopg2.extras import RealDictCursor
     logger = logging.getLogger(__name__)
     logger.info("Using PostgreSQL database")
 else:
     import sqlite3
     logger = logging.getLogger(__name__)
     logger.info("Using SQLite database")
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "cafe_pos.db")
 
 # Validation limits
 MAX_ORDER_QUANTITY = 100
@@ -132,6 +135,141 @@ SEED_PRODUCTS = [
 ]
 
 
+# --------------------------------------------------------------------------- #
+# PostgreSQL compatibility layer
+#
+# The routes below are written against the sqlite3 connection API
+# (db.execute(...) with "?" placeholders, ? -> %s, strftime(), date(),
+# cur.lastrowid, dict-like rows with integer indexing). These helpers adapt
+# psycopg2 to that interface so the same code works on both databases.
+# --------------------------------------------------------------------------- #
+class PgRow(dict):
+    """dict-like row that also supports integer indexing (row[0])."""
+
+    __slots__ = ("_values",)
+
+    def __init__(self, values, mapping):
+        super().__init__(mapping)
+        self._values = values
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return self._values[key]
+        return super().__getitem__(key)
+
+
+class PgCursor:
+    def __init__(self, cur):
+        self._cur = cur
+        self._lastrowid = None
+        self._cols = [d[0] for d in cur.description] if cur is not None and cur.description else []
+
+    def _convert(self, row):
+        return PgRow(list(row), dict(zip(self._cols, row))) if row is not None else None
+
+    def fetchone(self):
+        return self._convert(self._cur.fetchone()) if self._cur is not None else None
+
+    def fetchall(self):
+        return [self._convert(r) for r in self._cur.fetchall()] if self._cur is not None else []
+
+    @property
+    def rowcount(self):
+        return self._cur.rowcount if self._cur is not None else 0
+
+    @property
+    def lastrowid(self):
+        return self._lastrowid
+
+
+def _rewrite_round(sql):
+    """Rewrite ROUND(expr, n) as (ROUND(expr * 10^n) / 10^n).
+
+    PostgreSQL has no 2-arg ROUND for double precision, and rounding via
+    numeric would return Decimal (not JSON serializable). This keeps float.
+    """
+    out, i, upper = [], 0, sql.upper()
+    while True:
+        j = upper.find("ROUND(", i)
+        if j == -1:
+            out.append(sql[i:])
+            break
+        open_paren = j + len("ROUND(") - 1
+        depth, p = 0, open_paren
+        while p < len(sql):
+            if sql[p] == "(":
+                depth += 1
+            elif sql[p] == ")":
+                depth -= 1
+                if depth == 0:
+                    break
+            p += 1
+        args = sql[open_paren + 1:p]
+        depth, comma = 0, -1
+        for idx, ch in enumerate(args):
+            if ch == "(":
+                depth += 1
+            elif ch == ")":
+                depth -= 1
+            elif ch == "," and depth == 0:
+                comma = idx
+                break
+        if comma == -1:
+            out.append(sql[i:p + 1])
+        else:
+            expr, digits = args[:comma].strip(), args[comma + 1:].strip()
+            out.append(sql[i:j])
+            out.append(f"(ROUND({expr} * POW(10, {digits})) / POW(10, {digits}))")
+        i = p + 1
+    return "".join(out)
+
+
+def _translate_pg_sql(sql):
+    """Translate SQLite-flavoured SQL used by the routes into PostgreSQL."""
+    sql = sql.replace("?", "%s")
+    sql = _rewrite_round(sql)
+    sql = re.sub(r"strftime\('%Y-%m',\s*([\w.]+)\)", r"to_char(\1::timestamp, 'YYYY-MM')", sql)
+    sql = re.sub(r"strftime\('%d',\s*([\w.]+)\)", r"to_char(\1::timestamp, 'DD')", sql)
+    sql = re.sub(r"strftime\('%m',\s*([\w.]+)\)", r"to_char(\1::timestamp, 'MM')", sql)
+    sql = re.sub(r"strftime\('%Y',\s*([\w.]+)\)", r"to_char(\1::timestamp, 'YYYY')", sql)
+    sql = re.sub(r"\bdate\(([\w.]+)\)", r"\1::date", sql)
+    return sql
+
+
+class PgConnection:
+    """Wrap a psycopg2 connection with the sqlite3-style execute() API."""
+
+    def __init__(self, conn):
+        self._conn = conn
+
+    def execute(self, sql, params=None):
+        upper = sql.strip().upper()
+        if upper.startswith("BEGIN"):
+            # psycopg2 manages transactions itself; BEGIN IMMEDIATE is a no-op
+            return PgCursor(None)
+        translated = _translate_pg_sql(sql.strip())
+        is_insert = upper.startswith("INSERT") and "RETURNING" not in upper
+        if is_insert:
+            translated = translated.rstrip().rstrip(";") + " RETURNING id"
+        cur = self._conn.cursor()
+        cur.execute(translated, params) if params else cur.execute(translated)
+        pgcur = PgCursor(cur)
+        if is_insert:
+            row = cur.fetchone()
+            if row:
+                pgcur._lastrowid = row[0]
+        return pgcur
+
+    def commit(self):
+        self._conn.commit()
+
+    def rollback(self):
+        self._conn.rollback()
+
+    def close(self):
+        self._conn.close()
+
+
 def db_execute(sql, params=None):
     """Execute SQL with appropriate placeholders for database type"""
     if USE_POSTGRES:
@@ -147,8 +285,7 @@ def db_execute(sql, params=None):
 def get_db():
     if USE_POSTGRES:
         if "db" not in g:
-            g.db = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
-            g.db.autocommit = False
+            g.db = PgConnection(psycopg2.connect(DATABASE_URL))
         return g.db
     else:
         DB_PATH = os.path.join(BASE_DIR, "cafe_pos.db")
@@ -353,9 +490,10 @@ def create_order():
         db = get_db()
         try:
             db.execute("BEGIN IMMEDIATE")  # lock so concurrent sales can't oversell
+            lock = " FOR UPDATE" if USE_POSTGRES else ""
             lines, total, cost = [], 0.0, 0.0
             for pid, qty in wanted.items():
-                p = db.execute("SELECT * FROM products WHERE id = ?", (pid,)).fetchone()
+                p = db.execute(f"SELECT * FROM products WHERE id = ?{lock}", (pid,)).fetchone()
                 if p is None:
                     db.rollback()
                     logger.warning(f"Product not found: {pid}")
@@ -693,9 +831,7 @@ def health_check():
     """Health check endpoint for monitoring"""
     try:
         # Check database connection
-        db = sqlite3.connect(DB_PATH)
-        db.execute("SELECT 1")
-        db.close()
+        get_db().execute("SELECT 1")
         return jsonify({
             "status": "healthy",
             "database": "connected",

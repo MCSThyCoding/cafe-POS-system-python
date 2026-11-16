@@ -6,21 +6,44 @@ Roles:
 """
 import os
 import sqlite3
+import logging
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 
 import jwt
 from flask import Flask, Response, g, jsonify, request, send_from_directory
+from flask_cors import CORS
 from werkzeug.security import check_password_hash, generate_password_hash
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[
+        logging.FileHandler('cafe_pos.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "cafe_pos.db")
-SECRET_KEY = os.environ.get("CAFE_POS_SECRET", "change-me-in-production-cafe-pos-secret-key")
+
+# Validate SECRET_KEY in production
+SECRET_KEY = os.environ.get("CAFE_POS_SECRET")
+if not SECRET_KEY:
+    if os.environ.get("FLASK_ENV") == "production":
+        logger.error("CAFE_POS_SECRET environment variable must be set in production")
+        raise ValueError("CAFE_POS_SECRET environment variable must be set in production")
+    SECRET_KEY = "change-me-in-production-cafe-pos-secret-key"
+    logger.warning("Using default SECRET_KEY - set CAFE_POS_SECRET environment variable in production")
+
 TOKEN_HOURS = 8
 LOW_STOCK = 10
 RESTOCK_STEP = 10
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
+CORS(app)
 
 
 # --------------------------------------------------------------------------- #
@@ -168,17 +191,33 @@ def auth_required(*roles):
 
 @app.post("/api/login")
 def login():
-    data = request.get_json(silent=True) or {}
-    username = str(data.get("username", "")).strip()
-    password = str(data.get("password", ""))
-    user = get_db().execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
-    if user is None or not check_password_hash(user["password_hash"], password):
-        return jsonify(error="Invalid username or password"), 401
-    return jsonify(
-        token=make_token(user),
-        user={"id": user["id"], "username": user["username"],
+    try:
+        data = request.get_json(silent=True) or {}
+        if not data:
+            logger.warning("Login attempt with no data")
+            return jsonify(error="Invalid request"), 400
+        
+        username = str(data.get("username", "")).strip()
+        password = str(data.get("password", ""))
+        
+        if not username or not password:
+            logger.warning(f"Login attempt with missing fields - username: {bool(username)}, password: {bool(password)}")
+            return jsonify(error="Username and password are required"), 400
+        
+        user = get_db().execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+        if user is None or not check_password_hash(user["password_hash"], password):
+            logger.warning(f"Failed login attempt for username: {username}")
+            return jsonify(error="Invalid username or password"), 401
+        
+        logger.info(f"Successful login for user: {username}")
+        return jsonify(
+            token=make_token(user),
+            user={"id": user["id"], "username": user["username"],
               "full_name": user["full_name"], "role": user["role"]},
-    )
+        )
+    except Exception as e:
+        logger.error(f"Login error: {str(e)}")
+        return jsonify(error="Internal server error"), 500
 
 
 @app.get("/api/me")
@@ -238,61 +277,78 @@ def restock(product_id):
 @app.post("/api/orders")
 @auth_required()
 def create_order():
-    data = request.get_json(silent=True) or {}
-    items = data.get("items")
-    method = data.get("payment_method")
-    customer = (str(data.get("customer") or "Guest").strip() or "Guest")[:60]
-    if method not in ("Cash", "Card"):
-        return jsonify(error="Payment method must be Cash or Card"), 400
-    if not isinstance(items, list) or not items:
-        return jsonify(error="Cart is empty"), 400
-
-    # merge duplicate lines and validate quantities
-    wanted = {}
-    for it in items:
-        try:
-            pid, qty = int(it["product_id"]), int(it["quantity"])
-        except (KeyError, TypeError, ValueError):
-            return jsonify(error="Invalid cart item"), 400
-        if qty <= 0 or qty > 100:
-            return jsonify(error="Quantity must be between 1 and 100"), 400
-        wanted[pid] = wanted.get(pid, 0) + qty
-
-    db = get_db()
     try:
-        db.execute("BEGIN IMMEDIATE")  # lock so concurrent sales can't oversell
-        lines, total, cost = [], 0.0, 0.0
-        for pid, qty in wanted.items():
-            p = db.execute("SELECT * FROM products WHERE id = ?", (pid,)).fetchone()
-            if p is None:
-                db.rollback()
-                return jsonify(error=f"Product {pid} not found"), 404
-            if p["stock"] < qty:
-                db.rollback()
-                return jsonify(error=f"Not enough stock for {p['name']} (only {p['stock']} left)"), 409
-            lines.append((p, qty))
-            total += p["price"] * qty
-            cost += p["cost"] * qty
+        data = request.get_json(silent=True) or {}
+        if not data:
+            logger.warning("Order creation with no data")
+            return jsonify(error="Invalid request"), 400
+        
+        items = data.get("items")
+        method = data.get("payment_method")
+        customer = (str(data.get("customer") or "Guest").strip() or "Guest")[:60]
+        
+        if method not in ("Cash", "Card"):
+            logger.warning(f"Invalid payment method: {method}")
+            return jsonify(error="Payment method must be Cash or Card"), 400
+        if not isinstance(items, list) or not items:
+            logger.warning("Order creation with empty cart")
+            return jsonify(error="Cart is empty"), 400
 
-        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        cur = db.execute(
-            "INSERT INTO orders (user_id, customer, total, cost, payment_method, created_at) "
-            "VALUES (?,?,?,?,?,?)",
-            (g.user["id"], customer, round(total, 2), round(cost, 2), method, now),
-        )
-        order_id = cur.lastrowid
-        for p, qty in lines:
-            db.execute(
-                "INSERT INTO order_items (order_id, product_id, name, category, quantity, unit_price, unit_cost) "
-                "VALUES (?,?,?,?,?,?,?)",
-                (order_id, p["id"], p["name"], p["category"], qty, p["price"], p["cost"]),
+        # merge duplicate lines and validate quantities
+        wanted = {}
+        for it in items:
+            try:
+                pid, qty = int(it["product_id"]), int(it["quantity"])
+            except (KeyError, TypeError, ValueError):
+                logger.warning(f"Invalid cart item: {it}")
+                return jsonify(error="Invalid cart item"), 400
+            if qty <= 0 or qty > 100:
+                logger.warning(f"Invalid quantity: {qty}")
+                return jsonify(error="Quantity must be between 1 and 100"), 400
+            wanted[pid] = wanted.get(pid, 0) + qty
+
+        db = get_db()
+        try:
+            db.execute("BEGIN IMMEDIATE")  # lock so concurrent sales can't oversell
+            lines, total, cost = [], 0.0, 0.0
+            for pid, qty in wanted.items():
+                p = db.execute("SELECT * FROM products WHERE id = ?", (pid,)).fetchone()
+                if p is None:
+                    db.rollback()
+                    logger.warning(f"Product not found: {pid}")
+                    return jsonify(error=f"Product {pid} not found"), 404
+                if p["stock"] < qty:
+                    db.rollback()
+                    logger.warning(f"Insufficient stock for {p['name']}: requested {qty}, available {p['stock']}")
+                    return jsonify(error=f"Not enough stock for {p['name']} (only {p['stock']} left)"), 409
+                lines.append((p, qty))
+                total += p["price"] * qty
+                cost += p["cost"] * qty
+
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            cur = db.execute(
+                "INSERT INTO orders (user_id, customer, total, cost, payment_method, created_at) "
+                "VALUES (?,?,?,?,?,?)",
+                (g.user["id"], customer, round(total, 2), round(cost, 2), method, now),
             )
-            db.execute("UPDATE products SET stock = stock - ? WHERE id = ?", (qty, p["id"]))  # deduct stock
-        db.commit()
-    except Exception:
-        db.rollback()
-        raise
-    return jsonify(order_id=order_id, total=round(total, 2), payment_method=method, created_at=now), 201
+            order_id = cur.lastrowid
+            for p, qty in lines:
+                db.execute(
+                    "INSERT INTO order_items (order_id, product_id, name, category, quantity, unit_price, unit_cost) "
+                    "VALUES (?,?,?,?,?,?,?)",
+                    (order_id, p["id"], p["name"], p["category"], qty, p["price"], p["cost"]),
+                )
+                db.execute("UPDATE products SET stock = stock - ? WHERE id = ?", (qty, p["id"]))  # deduct stock
+            db.commit()
+            logger.info(f"Order #{order_id} created successfully - Total: ${total:.2f}, Method: {method}")
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Order creation failed: {str(e)}")
+            raise
+        return jsonify(order_id=order_id, total=round(total, 2), payment_method=method, created_at=now), 201
+    except Exception as e:
+        logger.error(f"Order endpoint error: {str(e)}")
+        return jsonify(error="Internal server error"), 500
 
 
 # --------------------------------------------------------------------------- #
@@ -587,6 +643,29 @@ def export_report():
 @app.get("/")
 def index():
     return send_from_directory(app.static_folder, "index.html")
+
+
+@app.get("/health")
+def health_check():
+    """Health check endpoint for monitoring"""
+    try:
+        # Check database connection
+        db = sqlite3.connect(DB_PATH)
+        db.execute("SELECT 1")
+        db.close()
+        return jsonify({
+            "status": "healthy",
+            "database": "connected",
+            "timestamp": datetime.now().isoformat()
+        }), 200
+    except Exception as e:
+        logger.error(f"Health check failed: {str(e)}")
+        return jsonify({
+            "status": "unhealthy",
+            "database": "disconnected",
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }), 503
 
 
 init_db()

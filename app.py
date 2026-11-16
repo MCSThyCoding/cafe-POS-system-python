@@ -1,11 +1,10 @@
-"""Cafe POS - Coffee Shop Web-Based Management System (Flask + SQLite + JWT)
+"""Cafe POS - Coffee Shop Web-Based Management System (Flask + PostgreSQL + JWT)
 
 Roles:
   cashier : login, menu, orders + payment, dashboard, inventory (view only)
   admin   : everything a cashier does + restock, reports, export daily report
 """
 import os
-import sqlite3
 import logging
 from datetime import datetime, timedelta, timezone
 from functools import wraps
@@ -17,16 +16,26 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 # Import configuration
 try:
-    from config import SECRET_KEY, TOKEN_HOURS, LOW_STOCK, RESTOCK_STEP, DB_PATH
+    from config import SECRET_KEY, TOKEN_HOURS, LOW_STOCK, RESTOCK_STEP
 except ImportError:
-    # Fallback if config.py doesn't exist
-    logger = logging.getLogger(__name__)
-    logger.warning("config.py not found, using defaults")
     SECRET_KEY = os.environ.get("CAFE_POS_SECRET", "change-me-in-production-cafe-pos-secret-key")
     TOKEN_HOURS = 8
     LOW_STOCK = 10
     RESTOCK_STEP = 10
-    DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cafe_pos.db")
+
+# Database configuration - support both SQLite (local) and PostgreSQL (production)
+DATABASE_URL = os.environ.get("DATABASE_URL")
+USE_POSTGRES = bool(DATABASE_URL)
+
+if USE_POSTGRES:
+    import psycopg2
+    from psycopg2.extras import RealDictCursor
+    logger = logging.getLogger(__name__)
+    logger.info("Using PostgreSQL database")
+else:
+    import sqlite3
+    logger = logging.getLogger(__name__)
+    logger.info("Using SQLite database")
 
 # Validation limits
 MAX_ORDER_QUANTITY = 100
@@ -123,12 +132,31 @@ SEED_PRODUCTS = [
 ]
 
 
+def db_execute(sql, params=None):
+    """Execute SQL with appropriate placeholders for database type"""
+    if USE_POSTGRES:
+        if params:
+            sql = sql.replace("?", "%s")
+            return get_db().execute(sql, params)
+        return get_db().execute(sql)
+    else:
+        if params:
+            return get_db().execute(sql, params)
+        return get_db().execute(sql)
+
 def get_db():
-    if "db" not in g:
-        g.db = sqlite3.connect(DB_PATH)
-        g.db.row_factory = sqlite3.Row
-        g.db.execute("PRAGMA foreign_keys = ON")
-    return g.db
+    if USE_POSTGRES:
+        if "db" not in g:
+            g.db = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+            g.db.autocommit = False
+        return g.db
+    else:
+        DB_PATH = os.path.join(BASE_DIR, "cafe_pos.db")
+        if "db" not in g:
+            g.db = sqlite3.connect(DB_PATH)
+            g.db.row_factory = sqlite3.Row
+            g.db.execute("PRAGMA foreign_keys = ON")
+        return g.db
 
 
 @app.teardown_appcontext
@@ -139,6 +167,12 @@ def close_db(_exc):
 
 
 def init_db():
+    """Initialize database - for PostgreSQL, use init_db.py instead"""
+    if USE_POSTGRES:
+        logger.info("PostgreSQL mode - database should be initialized via init_db.py")
+        return
+    
+    # SQLite mode
     db = sqlite3.connect(DB_PATH)
     db.executescript(SCHEMA)
     if db.execute("SELECT COUNT(*) FROM users").fetchone()[0] == 0:

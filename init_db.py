@@ -4,7 +4,7 @@ from psycopg2.extras import RealDictCursor
 from werkzeug.security import generate_password_hash
 
 # Replace this with your DATABASE_URL from Neon or Supabase
-DATABASE_URL = "postgresql://neondb_owner:npg_mTpLH9bfYnA2@ep-old-cloud-bdmtfjv2-pooler.c-8.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+DATABASE_URL = "postgresql://neondb_owner:npg_FLSu5pGaVy6Q@ep-summer-bird-bcr41zhy-pooler.c-16.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 
 def init_db():
     conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
